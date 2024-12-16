@@ -4,6 +4,7 @@ import requests
 from abc import ABC, abstractmethod
 import openai
 from openai import OpenAI
+from config.settings import LLMConfig, OpenAIConfig, OllamaConfig
 
 class LLMBase(ABC):
     """LLM基类，定义统一接口"""
@@ -31,18 +32,24 @@ class LLMBase(ABC):
 class OpenAIHandler(LLMBase):
     """OpenAI API处理器"""
     
-    def __init__(self, api_key: Optional[str] = None):
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+    def __init__(self, config: Optional[OpenAIConfig] = None):
+        self.config = config or OpenAIConfig()
+        self.api_key = self.config.api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError("OpenAI API密钥未设置")
-        self.client = OpenAI(api_key=self.api_key)
+        self.client = OpenAI(
+            api_key=self.api_key,
+            base_url=self.config.base_url
+        )
         
     def chat(self, messages: List[Dict[str, str]]) -> str:
         """使用OpenAI chat completion API"""
         try:
             response = self.client.chat.completions.create(
-                model="gpt-4",  # 可配置
-                messages=messages
+                model=self.config.chat_model,
+                messages=messages,
+                temperature=self.config.temperature,
+                max_tokens=self.config.max_tokens
             )
             return response.choices[0].message.content
         except Exception as e:
@@ -53,7 +60,7 @@ class OpenAIHandler(LLMBase):
         try:
             with open(image_path, "rb") as image_file:
                 response = self.client.chat.completions.create(
-                    model="gpt-4-vision-preview",
+                    model=self.config.vision_model,
                     messages=[
                         {
                             "role": "user",
@@ -68,7 +75,7 @@ class OpenAIHandler(LLMBase):
                             ]
                         }
                     ],
-                    max_tokens=500
+                    max_tokens=self.config.max_tokens
                 )
             return response.choices[0].message.content
         except Exception as e:
@@ -123,19 +130,20 @@ class OpenAIHandler(LLMBase):
 class OllamaHandler(LLMBase):
     """Ollama API处理器"""
     
-    def __init__(self, host: str = "http://localhost:11434"):
-        self.host = host
-        self.model = "llama2"  # 默认模型
+    def __init__(self, config: Optional[OllamaConfig] = None):
+        self.config = config or OllamaConfig()
         
     def chat(self, messages: List[Dict[str, str]]) -> str:
         """使用Ollama chat API"""
         try:
             response = requests.post(
-                f"{self.host}/api/chat",
+                f"{self.config.host}/api/chat",
                 json={
-                    "model": self.model,
-                    "messages": messages
-                }
+                    "model": self.config.chat_model,
+                    "messages": messages,
+                    "temperature": self.config.temperature
+                },
+                timeout=self.config.timeout
             )
             response.raise_for_status()
             return response.json()["message"]["content"]
@@ -147,12 +155,13 @@ class OllamaHandler(LLMBase):
         try:
             with open(image_path, "rb") as image_file:
                 response = requests.post(
-                    f"{self.host}/api/generate",
+                    f"{self.config.host}/api/generate",
                     json={
-                        "model": "llava",  # 使用支持图像的模型
+                        "model": self.config.vision_model,
                         "prompt": prompt,
                         "images": [image_file.read()]
-                    }
+                    },
+                    timeout=self.config.timeout
                 )
             response.raise_for_status()
             return response.json()["response"]
@@ -209,17 +218,19 @@ class LLMFactory:
     """LLM工厂类，用于创建LLM实例"""
     
     @staticmethod
-    def create(provider: str = "openai", **kwargs) -> LLMBase:
+    def create(provider: str = "openai", config: Optional[LLMConfig] = None) -> LLMBase:
         """
         创建LLM实例
         :param provider: 'openai' 或 'ollama'
-        :param kwargs: 额外参数
+        :param config: LLM配置
         :return: LLM实例
         """
+        config = config or LLMConfig()
+        
         if provider == "openai":
-            return OpenAIHandler(**kwargs)
+            return OpenAIHandler(config.openai)
         elif provider == "ollama":
-            return OllamaHandler(**kwargs)
+            return OllamaHandler(config.ollama)
         else:
             raise ValueError(f"不支持的LLM提供商: {provider}")
 

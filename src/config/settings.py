@@ -1,6 +1,44 @@
 import platform
 import os
 from pathlib import Path
+from typing import Dict, Optional
+from dataclasses import dataclass
+
+@dataclass
+class OpenAIConfig:
+    api_key: Optional[str] = None
+    base_url: str = "https://api.openai.com/v1"
+    chat_model: str = "gpt-4"
+    vision_model: str = "gpt-4-vision-preview"
+    max_tokens: int = 500
+    temperature: float = 0.7
+    timeout: int = 30
+
+@dataclass
+class OllamaConfig:
+    host: str = "http://localhost:11434"
+    chat_model: str = "llama2"
+    vision_model: str = "llava"
+    max_tokens: int = 500
+    temperature: float = 0.7
+    timeout: int = 30
+
+class LLMConfig:
+    """LLM配置管理类"""
+    
+    def __init__(self):
+        self.openai = OpenAIConfig()
+        self.ollama = OllamaConfig()
+    
+    @classmethod
+    def from_dict(cls, config_dict: Dict) -> 'LLMConfig':
+        """从字典创建配置"""
+        instance = cls()
+        if 'openai' in config_dict:
+            instance.openai = OpenAIConfig(**config_dict['openai'])
+        if 'ollama' in config_dict:
+            instance.ollama = OllamaConfig(**config_dict['ollama'])
+        return instance
 
 class Settings:
     # 系统相关配置
