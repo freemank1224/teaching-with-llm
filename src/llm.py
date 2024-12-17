@@ -248,4 +248,4 @@ if __name__ == "__main__":
         response = llm.chat(messages)
         print("回复:", response)
     except Exception as e:
-        print(f"错误: {e}") 
+        print(f"错误: {e}")

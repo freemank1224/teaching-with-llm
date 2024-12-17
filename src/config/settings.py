@@ -1,5 +1,6 @@
 import platform
 import os
+import json
 from pathlib import Path
 from typing import Dict, Optional
 from dataclasses import dataclass
@@ -29,6 +30,25 @@ class LLMConfig:
     def __init__(self):
         self.openai = OpenAIConfig()
         self.ollama = OllamaConfig()
+        self._load_config_from_json()
+    
+    def _load_config_from_json(self):
+        """从JSON文件加载配置"""
+        config_path = Path(__file__).parent / "llm_paras.json"
+        if config_path.exists():
+            try:
+                with open(config_path, 'r', encoding='utf-8') as f:
+                    config_dict = json.load(f)
+                # 使用加载的配置更新当前配置
+                if isinstance(config_dict, dict):
+                    # 直接更新属性，而不是重新赋值self
+                    if 'openai' in config_dict:
+                        self.openai = OpenAIConfig(**config_dict['openai'])
+                    if 'ollama' in config_dict:
+                        self.ollama = OllamaConfig(**config_dict['ollama'])
+                    print("Parameters file found and loaded successfully!")
+            except Exception as e:
+                print(f"加载配置文件失败: {str(e)}")
     
     @classmethod
     def from_dict(cls, config_dict: Dict) -> 'LLMConfig':
@@ -64,8 +84,8 @@ class Settings:
     # 评分配置
     SCORING_METRICS = {
         "完整性": 0.4,
-        "准确性": 0.4,
+        "正确性": 0.4,
         "创新性": 0.2
     }
 
-settings = Settings() 
+settings = Settings()
