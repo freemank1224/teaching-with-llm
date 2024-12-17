@@ -1,4 +1,4 @@
-from config.settings import LLMConfig, OllamaConfig, OpenAIConfig
+from src.config import LLMConfig, OllamaConfig, OpenAIConfig
 
 config = LLMConfig()
 print(config.openai.api_key)
