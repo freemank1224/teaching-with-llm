@@ -4,7 +4,7 @@ import requests
 from abc import ABC, abstractmethod
 import openai
 from openai import OpenAI
-from config.settings import LLMConfig, OpenAIConfig, OllamaConfig
+from config import OpenAIConfig, OllamaConfig, LLMConfig
 
 class LLMBase(ABC):
     """LLM基类，定义统一接口"""
