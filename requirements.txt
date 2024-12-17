@@ -1,0 +1,5 @@
+# Microsoft Markitdown
+markitdown>=1.0.0
+
+# MinerU dependencies
+magic-pdf[full] 

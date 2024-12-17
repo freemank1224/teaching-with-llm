@@ -24,11 +24,41 @@ class OllamaConfig:
     temperature: float = 0.7
     timeout: int = 30
 
+class ParserConfig:
+    """解析器配置"""
+    PARSER_TYPE = "markit"  # 可选值: "markit" 或 "miner"
+    SUPPORTED_FORMATS = ['.pdf', '.docx', '.pptx', '.xlsx']  # 支持更多格式
+    
+    # MinerU 特定配置
+    MINER_CONFIG = {
+        "layout-config": {
+            "model": "doclayout_yolo"
+        },
+        "formula-config": {
+            "enable": True,
+            "mfd_model": "yolo_v8_mfd",
+            "mfr_model": "unimernet_small"
+        },
+        "table-config": {
+            "enable": True,
+            "model": "rapid_table",
+            "max_time": 400
+        }
+    }
+    
+    # Markitdown 特定配置
+    MARKIT_CONFIG = {
+        "llm_enabled": False,  # 是否启用 LLM 进行图像描述
+        "llm_client": None,
+        "llm_model": None
+    }
+
 class LLMConfig:
     """LLM配置管理类"""
     def __init__(self):
         self.openai = OpenAIConfig()
         self.ollama = OllamaConfig()
+        self.parser = ParserConfig()
         self._load_config_from_json()
     
     def _load_config_from_json(self):
